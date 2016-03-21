@@ -32,6 +32,7 @@ if(WITH_JPEG)
   if(BUILD_JPEG)
     ocv_clear_vars(JPEG_FOUND)
   else()
+    hunter_add_package(Jpeg)
     include(FindJPEG)
   endif()
 
