@@ -54,7 +54,7 @@ if(HAVE_QT5)
     )
   endif()
 
-  foreach(dt5_dep Core Gui Widgets Test Concurrent)
+  foreach(dt5_dep Widgets Test Concurrent Gui Core)
     add_definitions(${Qt5${dt5_dep}_DEFINITIONS})
     include_directories(${Qt5${dt5_dep}_INCLUDE_DIRS})
     list(APPEND HIGHGUI_LIBRARIES ${Qt5${dt5_dep}_LIBRARIES})
