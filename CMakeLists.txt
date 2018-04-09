@@ -130,6 +130,10 @@ HunterGate(
 
 project(OpenCV CXX C)
 
+if(IOS)
+  set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -O3 -fomit-frame-pointer -ffast-math")
+endif()
+
 if(MSVC)
   set(CMAKE_USE_RELATIVE_PATHS ON CACHE INTERNAL "" FORCE)
 endif()
