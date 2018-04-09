@@ -122,7 +122,11 @@ if(DEFINED CMAKE_BUILD_TYPE)
   set_property( CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${CMAKE_CONFIGURATION_TYPES} )
 endif()
 
-enable_testing()
+include("cmake/HunterGate.cmake")
+HunterGate(
+    URL "https://github.com/ruslo/hunter/archive/v0.20.36.tar.gz"
+    SHA1 "9cbf5d9c7ee37c61d903b7f8751dc79d67eb26b4"
+)
 
 project(OpenCV CXX C)
 
