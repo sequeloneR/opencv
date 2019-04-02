@@ -373,3 +373,6 @@ if("@Qt5OpenGL_FOUND@")
 endif()
 # AWP: Qt5 dependencies -- end
 
+if(APPLE)
+  find_package(accelerate REQUIRED)
+endif()
