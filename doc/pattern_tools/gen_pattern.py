@@ -12,7 +12,7 @@ python gen_pattern.py -o out.svg -r 11 -c 8 -T circles -s 20.0 -R 5.0 -u mm -w 2
 -u, --units - mm, inches, px, m (default mm)
 -w, --page_width - page width in units (default 216)
 -h, --page_height - page height in units (default 279)
--a, --page_size - page size (default A4), supercedes -h -w arguments
+-a, --page_size - page size (default A4), supersedes -h -w arguments
 -H, --help - show help
 """
 
@@ -38,7 +38,7 @@ class PatternMaker:
     r = spacing / self.radius_rate
     for x in range(1,self.cols+1):
       for y in range(1,self.rows+1):
-        dot = SVG("circle", cx=x * spacing, cy=y * spacing, r=r, fill="black")
+        dot = SVG("circle", cx=x * spacing, cy=y * spacing, r=r, fill="black", stroke="none")
         self.g.append(dot)
 
   def makeACirclesPattern(self):
@@ -46,7 +46,7 @@ class PatternMaker:
     r = spacing / self.radius_rate
     for i in range(0,self.rows):
       for j in range(0,self.cols):
-        dot = SVG("circle", cx= ((j*2 + i%2)*spacing) + spacing, cy=self.height - (i * spacing + spacing), r=r, fill="black")
+        dot = SVG("circle", cx= ((j*2 + i%2)*spacing) + spacing, cy=self.height - (i * spacing + spacing), r=r, fill="black", stroke="none")
         self.g.append(dot)
 
   def makeCheckerboardPattern(self):
@@ -56,7 +56,7 @@ class PatternMaker:
     for x in range(0,self.cols):
       for y in range(0,self.rows):
         if x%2 == y%2:
-          square = SVG("rect", x=x * spacing + xspacing, y=y * spacing + yspacing, width=spacing, height=spacing, fill="black")
+          square = SVG("rect", x=x * spacing + xspacing, y=y * spacing + yspacing, width=spacing, height=spacing, fill="black", stroke="none")
           self.g.append(square)
 
   def save(self):
@@ -70,9 +70,9 @@ def main():
         opts, args = getopt.getopt(sys.argv[1:], "Ho:c:r:T:u:s:R:w:h:a:", ["help","output=","columns=","rows=",
                                                                       "type=","units=","square_size=","radius_rate=",
                                                                       "page_width=","page_height=", "page_size="])
-    except getopt.error, msg:
-        print msg
-        print "for help use --help"
+    except getopt.error as msg:
+        print(msg)
+        print("for help use --help")
         sys.exit(2)
     output = "out.svg"
     columns = 8
@@ -89,7 +89,7 @@ def main():
     # process options
     for o, a in opts:
         if o in ("-H", "--help"):
-            print __doc__
+            print(__doc__)
             sys.exit(0)
         elif o in ("-r", "--rows"):
             rows = int(a)

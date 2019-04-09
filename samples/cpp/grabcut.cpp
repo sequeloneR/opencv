@@ -276,26 +276,21 @@ static void on_mouse( int event, int x, int y, int flags, void* param )
 
 int main( int argc, char** argv )
 {
-    cv::CommandLineParser parser(argc, argv, "{help h||}{@input||}");
-    if (parser.has("help"))
-    {
-        help();
-        return 0;
-    }
+    cv::CommandLineParser parser(argc, argv, "{@input| messi5.jpg |}");
+    help();
+
     string filename = parser.get<string>("@input");
     if( filename.empty() )
     {
         cout << "\nDurn, empty filename" << endl;
         return 1;
     }
-    Mat image = imread( filename, 1 );
+    Mat image = imread(samples::findFile(filename), IMREAD_COLOR);
     if( image.empty() )
     {
         cout << "\n Durn, couldn't read image filename " << filename << endl;
         return 1;
     }
-
-    help();
 
     const string winName = "image";
     namedWindow( winName, WINDOW_AUTOSIZE );
@@ -306,8 +301,8 @@ int main( int argc, char** argv )
 
     for(;;)
     {
-        int c = waitKey(0);
-        switch( (char) c )
+        char c = (char)waitKey(0);
+        switch( c )
         {
         case '\x1b':
             cout << "Exiting ..." << endl;

@@ -41,7 +41,6 @@
 
 #include "precomp.hpp"
 #include "grfmt_jpeg.hpp"
-#include "jpeg_exif.hpp"
 
 #ifdef HAVE_JPEG
 
@@ -58,14 +57,14 @@
 #define mingw_getsp(...) 0
 #define __builtin_frame_address(...) 0
 
-#ifdef WIN32
+#ifdef _WIN32
 
 #define XMD_H // prevent redefinition of INT32
 #undef FAR  // prevent FAR redefinition
 
 #endif
 
-#if defined WIN32 && defined __GNUC__
+#if defined _WIN32 && defined __GNUC__
 typedef unsigned char boolean;
 #endif
 
@@ -79,18 +78,11 @@ extern "C" {
 namespace cv
 {
 
-#ifdef _MSC_VER
-# pragma warning(push)
-# pragma warning(disable:4324) //structure was padded due to __declspec(align())
-#endif
 struct JpegErrorMgr
 {
     struct jpeg_error_mgr pub;
     jmp_buf setjmp_buffer;
 };
-#ifdef _MSC_VER
-# pragma warning(pop)
-#endif
 
 struct JpegSource
 {
@@ -178,7 +170,6 @@ JpegDecoder::JpegDecoder()
     m_state = 0;
     m_f = 0;
     m_buf_supported = true;
-    m_orientation = JPEG_ORIENTATION_TL;
 }
 
 
@@ -255,69 +246,10 @@ bool  JpegDecoder::readHeader()
         }
     }
 
-    m_orientation = getOrientation();
-
     if( !result )
         close();
 
     return result;
-}
-
-int JpegDecoder::getOrientation()
-{
-    int orientation = JPEG_ORIENTATION_TL;
-
-    if (m_filename.size() > 0)
-    {
-        ExifReader reader( m_filename );
-        if( reader.parse() )
-        {
-            ExifEntry_t entry = reader.getTag( ORIENTATION );
-            if (entry.tag != INVALID_TAG)
-            {
-                orientation = entry.field_u16; //orientation is unsigned short, so check field_u16
-            }
-        }
-    }
-
-    return orientation;
-}
-
-void JpegDecoder::setOrientation(Mat& img)
-{
-    switch( m_orientation )
-    {
-        case    JPEG_ORIENTATION_TL: //0th row == visual top, 0th column == visual left-hand side
-            //do nothing, the image already has proper orientation
-            break;
-        case    JPEG_ORIENTATION_TR: //0th row == visual top, 0th column == visual right-hand side
-            flip(img, img, 1); //flip horizontally
-            break;
-        case    JPEG_ORIENTATION_BR: //0th row == visual bottom, 0th column == visual right-hand side
-            flip(img, img, -1);//flip both horizontally and vertically
-            break;
-        case    JPEG_ORIENTATION_BL: //0th row == visual bottom, 0th column == visual left-hand side
-            flip(img, img, 0); //flip vertically
-            break;
-        case    JPEG_ORIENTATION_LT: //0th row == visual left-hand side, 0th column == visual top
-            transpose(img, img);
-            break;
-        case    JPEG_ORIENTATION_RT: //0th row == visual right-hand side, 0th column == visual top
-            transpose(img, img);
-            flip(img, img, 1); //flip horizontally
-            break;
-        case    JPEG_ORIENTATION_RB: //0th row == visual right-hand side, 0th column == visual bottom
-            transpose(img, img);
-            flip(img, img, -1); //flip both horizontally and vertically
-            break;
-        case    JPEG_ORIENTATION_LB: //0th row == visual left-hand side, 0th column == visual bottom
-            transpose(img, img);
-            flip(img, img, 0); //flip vertically
-            break;
-        default:
-            //by default the image read has normal (JPEG_ORIENTATION_TL) orientation
-            break;
-    }
 }
 
 /***************************************************************************
@@ -402,7 +334,7 @@ int my_jpeg_load_dht (struct jpeg_decompress_struct *info, unsigned char *dht,
 
     JHUFF_TBL **hufftbl;
     unsigned char bits[17];
-    unsigned char huffval[256];
+    unsigned char huffval[256] = {0};
 
     while (length > 16)
     {
@@ -425,7 +357,7 @@ int my_jpeg_load_dht (struct jpeg_decompress_struct *info, unsigned char *dht,
 
        if (index & 0x10)
        {
-           index -= 0x10;
+           index &= ~0x10;
            hufftbl = &ac_tables[index];
        }
        else
@@ -457,7 +389,7 @@ int my_jpeg_load_dht (struct jpeg_decompress_struct *info, unsigned char *dht,
 bool  JpegDecoder::readData( Mat& img )
 {
     volatile bool result = false;
-    int step = (int)img.step;
+    size_t step = img.step;
     bool color = img.channels() > 1;
 
     if( m_state && m_width && m_height )
@@ -521,22 +453,21 @@ bool  JpegDecoder::readData( Mat& img )
                 if( color )
                 {
                     if( cinfo->out_color_components == 3 )
-                        icvCvt_RGB2BGR_8u_C3R( buffer[0], 0, data, 0, cvSize(m_width,1) );
+                        icvCvt_RGB2BGR_8u_C3R( buffer[0], 0, data, 0, Size(m_width,1) );
                     else
-                        icvCvt_CMYK2BGR_8u_C4C3R( buffer[0], 0, data, 0, cvSize(m_width,1) );
+                        icvCvt_CMYK2BGR_8u_C4C3R( buffer[0], 0, data, 0, Size(m_width,1) );
                 }
                 else
                 {
                     if( cinfo->out_color_components == 1 )
                         memcpy( data, buffer[0], m_width );
                     else
-                        icvCvt_CMYK2Gray_8u_C4C1R( buffer[0], 0, data, 0, cvSize(m_width,1) );
+                        icvCvt_CMYK2Gray_8u_C4C1R( buffer[0], 0, data, 0, Size(m_width,1) );
                 }
             }
 
             result = true;
             jpeg_finish_decompress( cinfo );
-            setOrientation( img );
         }
     }
 
@@ -750,7 +681,7 @@ bool JpegEncoder::write( const Mat& img, const std::vector<int>& params )
 
         if( channels > 1 )
             _buffer.allocate(width*channels);
-        buffer = _buffer;
+        buffer = _buffer.data();
 
         for( int y = 0; y < height; y++ )
         {
@@ -758,12 +689,12 @@ bool JpegEncoder::write( const Mat& img, const std::vector<int>& params )
 
             if( _channels == 3 )
             {
-                icvCvt_BGR2RGB_8u_C3R( data, 0, buffer, 0, cvSize(width,1) );
+                icvCvt_BGR2RGB_8u_C3R( data, 0, buffer, 0, Size(width,1) );
                 ptr = buffer;
             }
             else if( _channels == 4 )
             {
-                icvCvt_BGRA2BGR_8u_C4C3R( data, 0, buffer, 0, cvSize(width,1), 2 );
+                icvCvt_BGRA2BGR_8u_C4C3R( data, 0, buffer, 0, Size(width,1), 2 );
                 ptr = buffer;
             }
 

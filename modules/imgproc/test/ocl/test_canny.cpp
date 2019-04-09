@@ -48,7 +48,7 @@
 
 #ifdef HAVE_OPENCL
 
-namespace cvtest {
+namespace opencv_test {
 namespace ocl {
 
 ////////////////////////////////////////////////////////
@@ -133,6 +133,8 @@ OCL_INSTANTIATE_TEST_CASE_P(ImgProc, Canny, testing::Combine(
                                 testing::Values(L2gradient(false), L2gradient(true)),
                                 testing::Values(UseRoi(false), UseRoi(true))));
 
-} } // namespace cvtest::ocl
+} // namespace ocl
+
+} // namespace opencv_test
 
 #endif // HAVE_OPENCL

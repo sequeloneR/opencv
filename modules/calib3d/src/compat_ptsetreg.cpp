@@ -41,7 +41,8 @@
 //M*/
 
 #include "precomp.hpp"
-#include "opencv2/calib3d/calib3d_c.h"
+#include "opencv2/core/core_c.h"
+#include "calib3d_c_api.h"
 
 /************************************************************************************\
        Some backward compatibility stuff, to be moved to legacy or compat module
@@ -313,18 +314,13 @@ void CvLevMarq::step()
     if( !err )
         completeSymm( _JtJN, completeSymmFlag );
 
-#if 1
     _JtJN.diag() *= 1. + lambda;
-#else
-    _JtJN.diag() += lambda;
-#endif
     solve(_JtJN, _JtErr, nonzero_param, solveMethod);
 
     int j = 0;
     for( int i = 0; i < nparams; i++ )
         param->data.db[i] = prevParam->data.db[i] - (mask->data.ptr[i] ? nonzero_param(j++) : 0);
 }
-
 
 CV_IMPL int cvRANSACUpdateNumIters( double p, double ep, int modelPoints, int maxIters )
 {
